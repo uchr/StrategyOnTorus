@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bae497d043c85e4b9bf168bb16308cc, type: 3}
   m_Name: TorusTerrain
   m_EditorClassIdentifier: 
-  height: 4
-  minRadious: 3
-  maxRadious: 15
+  height: 2
+  smallRadious: 3
+  bigRadious: 15
   xCells: 180
   yCells: 500
   material: {fileID: 2100000, guid: f39de154a04a95c428b1e3d0635c0984, type: 2}

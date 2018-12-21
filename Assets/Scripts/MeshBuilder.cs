@@ -4,9 +4,8 @@ using System.IO;
 using UnityEngine;
 using UnityEditor;
 
-public static class MeshBuilder
-{
-    public static void GenerateTorusTerrain(TorusTerrain terrain) {
+public static class MeshBuilder {
+    public static void GenerateTorusTerrain(TorusTerrainSettings terrain) {
         string terrainName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(terrain));
 
         string pathToPrefabFolder = "Assets\\Prefabs\\Terrains";
@@ -44,7 +43,7 @@ public static class MeshBuilder
         AssetDatabase.CreateAsset(mesh, pathToAsset);
     }
 
-    private static GameObject GenerateTorusTerrain(string name, Mesh mesh, TorusTerrain terrain) {
+    private static GameObject GenerateTorusTerrain(string name, Mesh mesh, TorusTerrainSettings terrain) {
         GameObject go = new GameObject(name);
         go.AddComponent<MeshRenderer>();
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
@@ -53,7 +52,7 @@ public static class MeshBuilder
         return go;
     }
 
-    private static Mesh GenerateTorusTerrainMesh(TorusTerrain terrain) {
+    private static Mesh GenerateTorusTerrainMesh(TorusTerrainSettings terrain) {
         Texture2D heightMap = (Texture2D) terrain.heightMap;
 
         Mesh mesh = new Mesh();
@@ -76,10 +75,10 @@ public static class MeshBuilder
                 z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
                 h = heightMap.GetPixel(x, z).grayscale;
                 midleHeight += h;
-                rHeight = terrain.minRadious + h * terrain.height;
+                rHeight = terrain.smallRadious + h * terrain.height;
                 fi = ti * (2.0f * Mathf.PI / terrain.xCells);
                 fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
 
                 ti = i;
                 tj = j + 1;
@@ -87,10 +86,10 @@ public static class MeshBuilder
                 z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
                 h = heightMap.GetPixel(x, z).grayscale;
                 midleHeight += h;
-                rHeight = terrain.minRadious + h * terrain.height;
+                rHeight = terrain.smallRadious + h * terrain.height;
                 fi = ti * (2.0f * Mathf.PI / terrain.xCells);
                 fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
 
                 ti = i + 1;
                 tj = j;
@@ -98,10 +97,10 @@ public static class MeshBuilder
                 z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
                 h = heightMap.GetPixel(x, z).grayscale;
                 midleHeight += h;
-                rHeight = terrain.minRadious + h * terrain.height;
+                rHeight = terrain.smallRadious + h * terrain.height;
                 fi = ti * (2.0f * Mathf.PI / terrain.xCells);
                 fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
 
                 midleHeight /= 3;
                 if(midleHeight < 0.25f) {
@@ -133,10 +132,10 @@ public static class MeshBuilder
                 z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
                 h = heightMap.GetPixel(x, z).grayscale;
                 midleHeight += h;
-                rHeight = terrain.minRadious + h * terrain.height;
+                rHeight = terrain.smallRadious + h * terrain.height;
                 fi = ti * (2.0f * Mathf.PI / terrain.xCells);
                 fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
 
                 ti = i + 1;
                 tj = j;
@@ -144,10 +143,10 @@ public static class MeshBuilder
                 z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
                 h = heightMap.GetPixel(x, z).grayscale;
                 midleHeight += h;
-                rHeight = terrain.minRadious + h * terrain.height;
+                rHeight = terrain.smallRadious + h * terrain.height;
                 fi = ti * (2.0f * Mathf.PI / terrain.xCells);
                 fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
 
                 ti = i;
                 tj = j + 1;
@@ -155,10 +154,10 @@ public static class MeshBuilder
                 z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
                 h = heightMap.GetPixel(x, z).grayscale;
                 midleHeight += h;
-                rHeight = terrain.minRadious + h * terrain.height;
+                rHeight = terrain.smallRadious + h * terrain.height;
                 fi = ti * (2.0f * Mathf.PI / terrain.xCells);
                 fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.maxRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
 
                 midleHeight /= 3;
                 if(midleHeight < 0.25f) {
