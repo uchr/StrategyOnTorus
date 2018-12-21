@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &948869532349602270
+--- !u!1 &7133157445700861227
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8087202193063932263}
-  - component: {fileID: 3302771120235711960}
-  - component: {fileID: 7537452419086775223}
+  - component: {fileID: 2874258767296668802}
+  - component: {fileID: 4840929132994991566}
+  - component: {fileID: 6270884436743550845}
+  - component: {fileID: 2268389988023581032}
   m_Layer: 0
   m_Name: Assets\Terrains\TorusTerrain2\TorusTerrain2
   m_TagString: Untagged
@@ -18,13 +19,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8087202193063932263
+--- !u!4 &2874258767296668802
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 948869532349602270}
+  m_GameObject: {fileID: 7133157445700861227}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -32,13 +33,13 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!23 &3302771120235711960
+--- !u!23 &4840929132994991566
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 948869532349602270}
+  m_GameObject: {fileID: 7133157445700861227}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -69,11 +70,25 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!33 &7537452419086775223
+--- !u!33 &6270884436743550845
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 948869532349602270}
+  m_GameObject: {fileID: 7133157445700861227}
   m_Mesh: {fileID: 4300000, guid: 0ad43eaa68ae63342a16fa20dbd72cf5, type: 2}
+--- !u!114 &2268389988023581032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7133157445700861227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a96224c1b23bb54f981a8658dec45dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  settings: {fileID: 11400000, guid: a592ecc8eb9c89a439abe931b1d4e565, type: 2}
+  data: {fileID: 11400000, guid: e569d8a027c08ad4aad0c3ed8d7185ee, type: 2}

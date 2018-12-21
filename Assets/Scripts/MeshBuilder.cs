@@ -21,7 +21,7 @@ public static class MeshBuilder {
         Mesh mesh = GenerateTorusTerrainMesh(terrainData, terrainSettings);
         SaveAsset(mesh, pathToTerrainFolder, pathToMesh);
 
-        GameObject go = GenerateTorusTerrainPrefab(terrainName, mesh, terrainSettings);
+        GameObject go = GenerateTorusTerrainPrefab(terrainName, mesh, terrainData, terrainSettings);
         SavePrefab(go, pathToTerrainFolder, pathToPrefab);
         Object.DestroyImmediate(go);
     }
@@ -55,12 +55,18 @@ public static class MeshBuilder {
         AssetDatabase.SaveAssets();
     }
 
-    private static GameObject GenerateTorusTerrainPrefab(string name, Mesh mesh, TorusTerrainSettings terrain) {
+    private static GameObject GenerateTorusTerrainPrefab(string name,
+                                                         Mesh mesh,
+                                                         TorusTerrainData data,
+                                                         TorusTerrainSettings settings) {
         GameObject go = new GameObject(name);
         go.AddComponent<MeshRenderer>();
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
         meshFilter.sharedMesh = mesh;
-        go.GetComponent<Renderer>().material = terrain.material;
+        go.GetComponent<Renderer>().material = settings.material;
+        TorusTerrain terrain = go.AddComponent<TorusTerrain>();
+        terrain.settings = settings;
+        terrain.data = data;
         return go;
     }
 
