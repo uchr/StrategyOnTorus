@@ -5,30 +5,41 @@ using UnityEngine;
 using UnityEditor;
 
 public static class MeshBuilder {
-    public static void GenerateTorusTerrain(TorusTerrainSettings terrain) {
-        string terrainName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(terrain));
+    public static void GenerateTorusTerrain(TorusTerrainSettings terrainSettings) {
+        string terrainName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(terrainSettings));
 
-        string pathToPrefabFolder = "Assets\\Prefabs\\Terrains";
-        string pathToPrefab = Path.Combine(pathToPrefabFolder, terrainName + ".prefab");
-        string pathToAssetFolder = "Assets\\Meshes\\Terrains";
-        string pathToAsset = Path.Combine(pathToAssetFolder, terrainName + ".asset");
+        string pathToTerrainFolder = Path.Combine("Assets\\Terrains\\", terrainName);
+        string pathToData = Path.Combine(pathToTerrainFolder, terrainName + "Data.asset");
+        string pathToMesh = Path.Combine(pathToTerrainFolder, terrainName + "Mesh.asset");
+        string pathToPrefab = Path.Combine(pathToTerrainFolder, terrainName + ".prefab");
 
-        RemoveAsset(pathToAsset);
+        RemoveFolder(pathToTerrainFolder);
 
-        Mesh mesh = GenerateTorusTerrainMesh(terrain);
-        SaveMesh(mesh, pathToAssetFolder, pathToAsset);
+        TorusTerrainData terrainData = GenerateTorusTerrainData(terrainSettings);
+        SaveAsset(terrainData, pathToTerrainFolder, pathToData);
 
-        GameObject go = GenerateTorusTerrain(terrainName, mesh, terrain);
-        SavePrefab(go, pathToPrefabFolder, pathToPrefab);
+        Mesh mesh = GenerateTorusTerrainMesh(terrainData, terrainSettings);
+        SaveAsset(mesh, pathToTerrainFolder, pathToMesh);
+
+        GameObject go = GenerateTorusTerrainPrefab(terrainName, mesh, terrainSettings);
+        SavePrefab(go, pathToTerrainFolder, pathToPrefab);
         Object.DestroyImmediate(go);
+    }
+
+    private static void RemoveFolder(string pathToFolder) {
+        if(Directory.Exists(pathToFolder)) {
+            Directory.Delete(pathToFolder, true);
+            File.Delete(pathToFolder + ".meta");
+            AssetDatabase.Refresh();
+        }
     }
 
     private static void RemoveAsset(string pathToAsset) {
         if(File.Exists(pathToAsset)) {
-            File.Delete(pathToAsset + ".meta");
             File.Delete(pathToAsset);
+            File.Delete(pathToAsset + ".meta");
+            AssetDatabase.Refresh();
         }
-        AssetDatabase.Refresh();
     }
 
     private static void SavePrefab(GameObject go, string pathToFolder, string pathToPrefab) {
@@ -37,13 +48,14 @@ public static class MeshBuilder {
         PrefabUtility.SaveAsPrefabAsset(go, pathToPrefab);
     }
 
-    private static void SaveMesh(Mesh mesh, string pathToFolder, string pathToAsset) {
+    private static void SaveAsset(Object asset, string pathToFolder, string pathToAsset) {
         if (!Directory.Exists(pathToFolder))
             Directory.CreateDirectory(pathToFolder);
-        AssetDatabase.CreateAsset(mesh, pathToAsset);
+        AssetDatabase.CreateAsset(asset, pathToAsset);
+        AssetDatabase.SaveAssets();
     }
 
-    private static GameObject GenerateTorusTerrain(string name, Mesh mesh, TorusTerrainSettings terrain) {
+    private static GameObject GenerateTorusTerrainPrefab(string name, Mesh mesh, TorusTerrainSettings terrain) {
         GameObject go = new GameObject(name);
         go.AddComponent<MeshRenderer>();
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
@@ -52,132 +64,93 @@ public static class MeshBuilder {
         return go;
     }
 
-    private static Mesh GenerateTorusTerrainMesh(TorusTerrainSettings terrain) {
-        Texture2D heightMap = (Texture2D) terrain.heightMap;
+    private static TorusTerrainData GenerateTorusTerrainData(TorusTerrainSettings settings) {
+        Texture2D heightMap = (Texture2D) settings.heightMap;
+
+        System.Func<int, int, TorusVector3> calcVertices = delegate(int ti, int tj) {
+            int x = Mathf.FloorToInt((float) ti / settings.xCells * heightMap.width);
+            int z = Mathf.FloorToInt((float) tj / settings.yCells * heightMap.height);
+            float h = heightMap.GetPixel(x, z).grayscale;
+            float sR = settings.smallRadious + h * settings.height;
+            float xA = ti * (2.0f * Mathf.PI / settings.xCells);
+            float yA = tj * (2.0f * Mathf.PI / settings.yCells);
+            return new TorusVector3(sR, settings.bigRadious, xA, yA);
+        };
+
+        TorusCell[,] cells = new TorusCell[settings.xCells, settings.yCells];
+        for(int i = 0; i < settings.xCells; ++i) {
+            for(int j = 0; j < settings.yCells; ++j) {
+                cells[i, j].v0 = calcVertices(i, j);
+                cells[i, j].v1 = calcVertices(i + 1, j);
+                cells[i, j].v2 = calcVertices(i, j + 1);
+                cells[i, j].v3 = calcVertices(i + 1, j + 1);
+            }
+        }
+
+        TorusTerrainData terrainData = ScriptableObject.CreateInstance<TorusTerrainData>();
+        terrainData.cells = cells;
+        return terrainData;
+    }
+
+    private static Mesh GenerateTorusTerrainMesh(TorusTerrainData data, TorusTerrainSettings settings) {
+        Texture2D heightMap = (Texture2D) settings.heightMap;
 
         Mesh mesh = new Mesh();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
         List<int> faces = new List<int>();
-
-        int x, z, ti, tj;
-        float h, midleHeight, fi, fj, rHeight;
         int index = 0;
-        for(int i = 0; i < terrain.xCells; ++i) {
-            for(int j = 0; j < terrain.yCells; ++j) {
+        for(int i = 0; i < settings.xCells; ++i) {
+            for(int j = 0; j < settings.yCells; ++j) {
+                TorusCell cell = data.cells[i, j];
                 // Left down triangle
-                midleHeight = 0.0f;
+                vertices.Add(cell.v0.ToCartesian());
+                vertices.Add(cell.v1.ToCartesian());
+                vertices.Add(cell.v2.ToCartesian());
 
-                ti = i;
-                tj = j;
-                x = Mathf.FloorToInt((float) ti / terrain.xCells * heightMap.width);
-                z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
-                h = heightMap.GetPixel(x, z).grayscale;
-                midleHeight += h;
-                rHeight = terrain.smallRadious + h * terrain.height;
-                fi = ti * (2.0f * Mathf.PI / terrain.xCells);
-                fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                float averageHeight = cell.v0.sR + cell.v1.sR + cell.v2.sR - 3 * settings.smallRadious;
+                averageHeight /= 3 * settings.height;
+                if(averageHeight < 0.25f)
+                    averageHeight = 0.15f;
+                else if(averageHeight < 0.5f)
+                    averageHeight = 0.4f;
+                else if(averageHeight < 0.75f)
+                    averageHeight = 0.65f;
+                else
+                    averageHeight = 0.9f;
 
-                ti = i;
-                tj = j + 1;
-                x = Mathf.FloorToInt((float) ti / terrain.xCells * heightMap.width);
-                z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
-                h = heightMap.GetPixel(x, z).grayscale;
-                midleHeight += h;
-                rHeight = terrain.smallRadious + h * terrain.height;
-                fi = ti * (2.0f * Mathf.PI / terrain.xCells);
-                fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                uvs.Add(new Vector2(0.4f, averageHeight));
+                uvs.Add(new Vector2(0.5f, averageHeight));
+                uvs.Add(new Vector2(0.4f, averageHeight - 0.05f));
 
-                ti = i + 1;
-                tj = j;
-                x = Mathf.FloorToInt((float) ti / terrain.xCells * heightMap.width);
-                z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
-                h = heightMap.GetPixel(x, z).grayscale;
-                midleHeight += h;
-                rHeight = terrain.smallRadious + h * terrain.height;
-                fi = ti * (2.0f * Mathf.PI / terrain.xCells);
-                fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
-
-                midleHeight /= 3;
-                if(midleHeight < 0.25f) {
-                    midleHeight = 0.15f;
-                }
-                else if(midleHeight < 0.5f) {
-                    midleHeight = 0.4f;
-                }
-                else if(midleHeight < 0.75f) {
-                    midleHeight = 0.65f;
-                }
-                else {
-                    midleHeight = 0.9f;
-                }
-                uvs.Add(new Vector2(0.4f, midleHeight));
-                uvs.Add(new Vector2(0.5f, midleHeight));
-                uvs.Add(new Vector2(0.4f, midleHeight - 0.05f));
-
+                faces.Add(index + 0);
                 faces.Add(index + 1);
-                faces.Add(index);
                 faces.Add(index + 2);
                 index += 3;
 
                 // Right top triangle
-                midleHeight = 0.0f;
-                ti = i + 1;
-                tj = j + 1;
-                x = Mathf.FloorToInt((float) ti / terrain.xCells * heightMap.width);
-                z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
-                h = heightMap.GetPixel(x, z).grayscale;
-                midleHeight += h;
-                rHeight = terrain.smallRadious + h * terrain.height;
-                fi = ti * (2.0f * Mathf.PI / terrain.xCells);
-                fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
+                vertices.Add(cell.v1.ToCartesian());
+                vertices.Add(cell.v2.ToCartesian());
+                vertices.Add(cell.v3.ToCartesian());
 
-                ti = i + 1;
-                tj = j;
-                x = Mathf.FloorToInt((float) ti / terrain.xCells * heightMap.width);
-                z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
-                h = heightMap.GetPixel(x, z).grayscale;
-                midleHeight += h;
-                rHeight = terrain.smallRadious + h * terrain.height;
-                fi = ti * (2.0f * Mathf.PI / terrain.xCells);
-                fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
-
-                ti = i;
-                tj = j + 1;
-                x = Mathf.FloorToInt((float) ti / terrain.xCells * heightMap.width);
-                z = Mathf.FloorToInt((float) tj / terrain.yCells * heightMap.height);
-                h = heightMap.GetPixel(x, z).grayscale;
-                midleHeight += h;
-                rHeight = terrain.smallRadious + h * terrain.height;
-                fi = ti * (2.0f * Mathf.PI / terrain.xCells);
-                fj = tj * (2.0f * Mathf.PI / terrain.yCells);
-                vertices.Add(new Vector3((terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Cos(fj), rHeight * Mathf.Sin(fi), (terrain.bigRadious + rHeight * Mathf.Cos(fi)) * Mathf.Sin(fj)));
-
-                midleHeight /= 3;
-                if(midleHeight < 0.25f) {
-                    midleHeight = 0.15f;
-                }
-                else if(midleHeight < 0.5f) {
-                    midleHeight = 0.4f;
-                }
-                else if(midleHeight < 0.75f) {
-                    midleHeight = 0.65f;
-                }
-                else {
-                    midleHeight = 0.9f;
-                }
-                uvs.Add(new Vector2(0.4f, midleHeight));
-                uvs.Add(new Vector2(0.5f, midleHeight));
-                uvs.Add(new Vector2(0.4f, midleHeight - 0.1f));
+                averageHeight = cell.v1.sR + cell.v2.sR + cell.v3.sR - 3 * settings.smallRadious;
+                averageHeight /= 3 * settings.height;
+                if(averageHeight < 0.25f)
+                    averageHeight = 0.15f;
+                else if(averageHeight < 0.5f)
+                    averageHeight = 0.4f;
+                else if(averageHeight < 0.75f)
+                    averageHeight = 0.65f;
+                else
+                    averageHeight = 0.9f;
+                    
+                uvs.Add(new Vector2(0.4f, averageHeight));
+                uvs.Add(new Vector2(0.5f, averageHeight));
+                uvs.Add(new Vector2(0.4f, averageHeight - 0.05f));
 
                 faces.Add(index + 1);
-                faces.Add(index);
+                faces.Add(index + 0);
                 faces.Add(index + 2);
                 index += 3;
             }

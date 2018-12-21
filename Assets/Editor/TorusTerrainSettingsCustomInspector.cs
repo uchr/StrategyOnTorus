@@ -4,8 +4,7 @@ using UnityEngine;
 using UnityEditor;
 
 [CustomEditor(typeof(TorusTerrainSettings))]
-public class TorusTerrainSettingsCustomInspector : Editor
-{
+public class TorusTerrainSettingsCustomInspector : Editor {
     private TorusTerrainSettings targetSetting;
 
     public override void OnInspectorGUI()
