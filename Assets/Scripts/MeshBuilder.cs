@@ -95,21 +95,9 @@ public static class MeshBuilder {
     private static Mesh GenerateTorusTerrainMesh(TorusTerrainData data, TorusTerrainSettings settings) {
         Texture2D heightMap = (Texture2D) settings.heightMap;
 
-        Mesh mesh = new Mesh();
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        List<Vector3> vertices = new List<Vector3>();
-        List<Vector2> uvs = new List<Vector2>();
-        List<int> faces = new List<int>();
-        int index = 0;
-        for(int i = 0; i < settings.xCells; ++i) {
-            for(int j = 0; j < settings.yCells; ++j) {
-                TorusCell cell = data.cells[i, j];
-                // Left down triangle
-                vertices.Add(cell.v0.ToCartesian());
-                vertices.Add(cell.v1.ToCartesian());
-                vertices.Add(cell.v2.ToCartesian());
-
-                float averageHeight = cell.v0.sR + cell.v1.sR + cell.v2.sR - 3 * settings.smallRadious;
+        System.Func<TorusVector3, TorusVector3, TorusVector3, float> getAverageHeight = 
+            delegate(TorusVector3 tv0, TorusVector3 tv1, TorusVector3 tv2) {
+                float averageHeight = tv0.sR + tv1.sR + tv2.sR - 3 * settings.smallRadious;
                 averageHeight /= 3 * settings.height;
                 if(averageHeight < 0.25f)
                     averageHeight = 0.15f;
@@ -120,6 +108,25 @@ public static class MeshBuilder {
                 else
                     averageHeight = 0.9f;
 
+                return averageHeight;
+        };
+
+        Mesh mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        List<Vector3> vertices = new List<Vector3>();
+        List<Vector2> uvs = new List<Vector2>();
+        List<int> faces = new List<int>();
+
+        int index = 0;
+        for(int i = 0; i < settings.xCells; ++i) {
+            for(int j = 0; j < settings.yCells; ++j) {
+                TorusCell cell = data.cells[i, j];
+                // Left down triangle
+                vertices.Add(cell.v0.ToCartesian());
+                vertices.Add(cell.v1.ToCartesian());
+                vertices.Add(cell.v2.ToCartesian());
+
+                float averageHeight = getAverageHeight(cell.v0, cell.v1, cell.v2);
                 uvs.Add(new Vector2(0.4f, averageHeight));
                 uvs.Add(new Vector2(0.5f, averageHeight));
                 uvs.Add(new Vector2(0.4f, averageHeight - 0.05f));
@@ -134,17 +141,7 @@ public static class MeshBuilder {
                 vertices.Add(cell.v2.ToCartesian());
                 vertices.Add(cell.v3.ToCartesian());
 
-                averageHeight = cell.v1.sR + cell.v2.sR + cell.v3.sR - 3 * settings.smallRadious;
-                averageHeight /= 3 * settings.height;
-                if(averageHeight < 0.25f)
-                    averageHeight = 0.15f;
-                else if(averageHeight < 0.5f)
-                    averageHeight = 0.4f;
-                else if(averageHeight < 0.75f)
-                    averageHeight = 0.65f;
-                else
-                    averageHeight = 0.9f;
-                    
+                averageHeight = getAverageHeight(cell.v1, cell.v2, cell.v3);
                 uvs.Add(new Vector2(0.4f, averageHeight));
                 uvs.Add(new Vector2(0.5f, averageHeight));
                 uvs.Add(new Vector2(0.4f, averageHeight - 0.05f));
